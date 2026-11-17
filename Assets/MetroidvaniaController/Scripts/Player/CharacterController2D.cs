@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using UnityEngine.Events;
 using System.Collections;
 using UnityEngine.SceneManagement;
@@ -11,6 +12,8 @@ public class CharacterController2D : MonoBehaviour
 	[SerializeField] private LayerMask m_WhatIsGround;							// A mask determining what is ground to the character
 	[SerializeField] private Transform m_GroundCheck;							// A position marking where to check if the player is grounded.
 	[SerializeField] private Transform m_WallCheck;								//Posicion que controla si el personaje toca una pared
+
+	public HealthBar healthBar;
 
 	const float k_GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
 	private bool m_Grounded;            // Whether or not the player is grounded.
@@ -47,12 +50,17 @@ public class CharacterController2D : MonoBehaviour
 	public UnityEvent OnFallEvent;
 	public UnityEvent OnLandEvent;
 
+	public Action<float> LifeChanged;
+
 	[System.Serializable]
 	public class BoolEvent : UnityEvent<bool> { }
 
 	private void Awake()
 	{
 		m_Rigidbody2D = GetComponent<Rigidbody2D>();
+		healthBar.MaxValue = life;
+		healthBar.CurrentValue = life;
+	    LifeChanged += healthBar.UpdateValue;
 		animator = GetComponent<Animator>();
 
 		if (OnFallEvent == null)
@@ -267,6 +275,7 @@ public class CharacterController2D : MonoBehaviour
 		{
 			animator.SetBool("Hit", true);
 			life -= damage;
+			LifeChanged?.Invoke(damage);
 			Vector2 damageDir = Vector3.Normalize(transform.position - position) * 40f ;
 			m_Rigidbody2D.linearVelocity = Vector2.zero;
 			m_Rigidbody2D.AddForce(damageDir * 10);
